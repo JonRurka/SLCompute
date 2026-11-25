@@ -1,0 +1,123 @@
+/*#version 450
+
+#define USL_VULKAN 1
+#include "libUSL/USL.inc"
+
+#define FUNCTION_LOAD_SOURCE_FLOAT 1
+#define FUNCTION_LOAD_SOURCE_COMPLEX 2
+
+#ifndef SIZE_X
+#define SIZE_X 64
+#endif
+
+#ifndef SIZE_Y
+#define SIZE_Y 1
+#endif
+
+#ifndef SIZE_Z
+#define SIZE_Z 1
+#endif
+
+read_buffer(uvec4, 0, control_in)
+read_buffer(uvec4, 1, settings_in)
+
+read_buffer_float(2, buffer_in_complex_stage)
+read_buffer_float(3, buffer_in_float_stage)
+
+readwrite_buffer_float(4, buffer_out_complex)
+readwrite_buffer_float(5, buffer_out_float)
+
+
+#define SETTINGS_FUNC() (get_buffer_vector(settings_in, 0).x)
+#define SETTINGS_NUM_ELEMENTS() (get_buffer_vector(settings_in, 0).y)
+#define SETTINGS_FLOAT_ELEMENT_SIZE() (get_buffer_vector(settings_in, 0).z)
+#define SETTINGS_COMPLEX_ELEMENT_SIZE() (get_buffer_vector(settings_in, 0).w)
+
+
+void load_source_float(uint idx)
+{
+	uint elem_flt_size = SETTINGS_FLOAT_ELEMENT_SIZE();
+	uint local_id = get_buffer_vector(control_in, idx).x;
+	uint dst_index = (idx * elem_flt_size) + local_id;
+	uint src_index = idx;
+	
+	float val = get_buffer_scalar(buffer_in_float_stage, src_index);
+	set_buffer_scalar(buffer_out_float, src_index, val);
+}
+
+void load_source_complex(uint idx)
+{
+	uint elem_cmplx_size = SETTINGS_COMPLEX_ELEMENT_SIZE();
+	uint local_id = get_buffer_vector(control_in, idx).x;
+	uint dst_index = (idx * elem_cmplx_size) + local_id;
+	uint src_index = idx * 2;
+	
+	float real = get_buffer_scalar(buffer_in_float_stage, src_index + 0);
+	float imag = get_buffer_scalar(buffer_in_float_stage, src_index + 1);
+	set_buffer_scalar(buffer_out_float, src_index + 0, real);
+	set_buffer_scalar(buffer_out_float, src_index + 1, imag);
+}
+
+layout (local_size_x = SIZE_X, local_size_y = SIZE_Y, local_size_z = SIZE_Z) in;
+void main()
+{
+	uint func = SETTINGS_FUNC();
+	uint x = gl_GlobalInvocationID.x;
+	
+	switch(func)
+	{
+		case FUNCTION_LOAD_SOURCE_FLOAT:
+			load_source_float(x);
+			break;
+		case FUNCTION_LOAD_SOURCE_COMPLEX:
+			load_source_complex(x);
+			break;
+	}	
+	
+	//FUNC (gl_GlobalInvocationID.x);
+}*/
+#version 450
+
+#ifndef SIZE_X
+#define SIZE_X 64
+#endif
+
+#ifndef SIZE_Y
+#define SIZE_Y 1
+#endif
+
+#ifndef SIZE_Z
+#define SIZE_Z 1
+#endif
+
+#define USL_VULKAN 1
+#define GLSL
+#define GSL_FLOAT
+
+#include "libUSL/USL.inc"
+#include "libGSL/standard_buffers.inc"
+
+// Macros and settings
+#define SETTINGS_FUNC() (SETTINGS_BUFFER[0].x)
+#define NUM_ELEMENTS() (SETTINGS_BUFFER[0].y)
+
+// Main entry point
+void Execute(uint x){
+    //return;
+
+	uint func_id = SETTINGS_FUNC();
+	switch(func_id){
+        default:
+            break;
+	}
+}
+
+layout (local_size_x = SIZE_X, local_size_y = SIZE_Y, local_size_z = SIZE_Z) in;
+void main()
+{
+	uint x = gl_GlobalInvocationID.x;
+	Execute(x);
+}
+
+
+

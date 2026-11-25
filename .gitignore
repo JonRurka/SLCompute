@@ -1,0 +1,29 @@
+# CLion
+.idea/
+
+# CMake / Conan build directories
+build/
+cmake-build-*/
+
+# CMake user-local presets (machine-specific)
+CMakeUserPresets.json
+
+# CMake generated artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+
+# Ninja
+build.ninja
+.ninja_deps
+.ninja_log
+
+# Compiled output
+*.so
+*.a
+*.dll
+*.lib
+*.exe

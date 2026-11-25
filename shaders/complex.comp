@@ -1,0 +1,27 @@
+#version 450
+
+#define USL_VULKAN 1
+#define GLSL
+#define GSL_FLOAT
+#include "libGSL/complex_imp.inc"
+
+#ifndef SIZE_X
+#define SIZE_X 64
+#endif
+
+#ifndef SIZE_Y
+#define SIZE_Y 1
+#endif
+
+#ifndef SIZE_Z
+#define SIZE_Z 1
+#endif
+
+layout (local_size_x = SIZE_X, local_size_y = SIZE_Y, local_size_z = SIZE_Z) in;
+void main()
+{
+	uint x = gl_GlobalInvocationID.x;
+	Execute(x);
+	
+	//FUNC (gl_GlobalInvocationID.x);
+}

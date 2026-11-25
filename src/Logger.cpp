@@ -1,0 +1,188 @@
+//
+// Created by jon on 11/10/26.
+//
+#include "Logger.h"
+
+#include <cassert>
+#include <iterator>
+#include <sstream>
+#include <stdarg.h>
+#include <cstdio>
+#include <iostream>
+
+
+#define MESSAGE_BUFFER_SIZE (10 * 1024)
+
+Logger Logger::m_logger;
+std::mutex Logger::m_lock;
+
+namespace {
+    std::string to_display_string(Logger::Level log_level, const std::string& source, const std::string& message)
+    {
+        std::string type_str;
+        switch (log_level)
+        {
+            case Logger::Level::Debug:
+                type_str = "DEBUG";
+                break;
+            case Logger::Level::Info:
+                type_str = "INFO";
+                break;
+            case Logger::Level::Warning:
+                type_str = "WARNING";
+                break;
+            case Logger::Level::Error:
+                type_str = "ERROR";
+                break;
+            case Logger::Level::Fatal:
+                type_str = "FATAL_ERROR";
+                break;
+        }
+
+        char tmp_buffer[MESSAGE_BUFFER_SIZE];
+        sprintf(tmp_buffer, "%s::%s: %s\n", type_str.c_str(), source.c_str(), message.c_str());
+        std::string res = tmp_buffer;
+        return res;
+    }
+}
+
+void Logger::Log(Logger::Level level, std::string source, std::string message)
+{
+    LogEntry entry;
+    entry.log_level = level;
+    entry.source = source;
+    entry.message = message;
+
+    m_lock.lock();
+    m_logger.m_entries.push_back(entry);
+    m_lock.unlock();
+
+    std::string msg = to_display_string(level, source, message);
+    //TracyMessageL(msg.c_str());
+
+    if (m_direct) {
+        Update(true);
+    }
+}
+
+void Logger::Log(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Info, source, message);
+}
+
+void Logger::LogFatal(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Fatal, source, message);
+    assert(false);
+}
+
+void Logger::LogError(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Error, source, message);
+    if (m_crash_on_error)
+    {
+        assert(false);
+    }
+}
+
+void Logger::LogWarning(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Warning, source, message);
+    if (m_crash_on_warning)
+    {
+        assert(false);
+    }
+}
+
+void Logger::LogInfo(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Info, source, message);
+}
+
+void Logger::LogDebug(std::string source, const std::string format, ...)
+{
+    char buffer[MESSAGE_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format.c_str(), args);
+    va_end(args);
+    std::string message = std::string(buffer);
+    Log(Level::Debug, source, message);
+}
+
+std::vector<Logger::LogEntry> Logger::GetLogEntries()
+{
+    // Declaring new vector
+    std::vector<Logger::LogEntry> res;
+
+    m_lock.lock();
+    // Copying vector by copy function
+    std::copy(m_logger.m_entries.begin(), m_logger.m_entries.end(), std::back_inserter(res));
+
+    m_logger.m_entries.clear();
+    m_lock.unlock();
+
+    return res;
+}
+
+void Logger::Update(bool force)
+{
+    if (m_direct && !force)
+        return;
+
+    bool halt = false;
+    std::vector<Logger::LogEntry> entries = GetLogEntries();
+    for (const auto& entry : entries) {
+        if (m_crash_on_warning && entry.log_level == Logger::Level::Warning)
+        {
+            halt = true;
+        }
+        if (m_crash_on_error && entry.log_level == Logger::Level::Error)
+        {
+            halt = true;
+        }
+        if (entry.log_level == Logger::Level::Fatal)
+        {
+            halt = true;
+        }
+
+        //printf("%s::%s: %s\n", type_str.c_str(), entry.source.c_str(), entry.message.c_str());
+        std::string output = to_display_string(entry.log_level, entry.source, entry.message);
+        printf("%s", output.c_str());
+
+        if (halt)
+        {
+            assert(false);
+        }
+    }
+}
