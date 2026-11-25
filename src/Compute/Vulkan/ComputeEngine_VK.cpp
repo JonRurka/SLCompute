@@ -2,7 +2,7 @@
 
 //#include "nvgl/extensions_gl.hpp"
 
-#include "GPGSL_Program.h"
+#include "SLC_Program.h"
 #include "vulkan_utils.h"
 #include "vk_mem_alloc.h"
 

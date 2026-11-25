@@ -1,6 +1,6 @@
-#include "GPGSL_ComputePool_private.h"
+#include "SLC_ComputePool_private.h"
 #include "Compute/stdafx.h"
-#include "GPGSL_func_ids.h"
+#include "SLC_func_ids.h"
 #include "Logger.h"
 
 #define VEC4_SIZE (sizeof(float) * 4)

@@ -12,11 +12,11 @@ include_directories(include/Compute/Vulkan)
 
 set(slc_headers
         # science library
-        include/GPGSL_Structures.h
-        include/GPGSL_func_ids.h
-        include/GPGSL_Program.h
-        include/GPGSL_ComputePool.h
-        include/GPGSL_ComputePool_private.h
+        include/SLC_Structures.h
+        include/SLC_func_ids.h
+        include/SLC_Program.h
+        include/SLC_ComputePool.h
+        include/SLC_ComputePool_private.h
         include/complex.h
 
         # Resources
@@ -62,9 +62,9 @@ LIST(APPEND slc_headers
 
 set(slc_sources
         # science library
-        src/GPGSL_Program.cpp
-        src/GPGSL_ComputePool.cpp
-        src/GPGSL_ComputePool_private.cpp
+        src/SLC_Program.cpp
+        src/SLC_ComputePool.cpp
+        src/SLC_ComputePool_private.cpp
         src/complex.cpp
         src/slcompute.cpp
         src/Logger.cpp
@@ -137,9 +137,9 @@ set(slc_sources_old
         src/Compute/ComputeInterface.cpp
 
         # science library
-        src/GPGSL_Program.cpp
-        src/GPGSL_ComputePool.cpp
-        src/GPGSL_ComputePool_private.cpp
+        src/SLC_Program.cpp
+        src/SLC_ComputePool.cpp
+        src/SLC_ComputePool_private.cpp
         src/complex.cpp
         include/bimap.h
 )
@@ -167,19 +167,24 @@ set(SHADER_DIR "${CMAKE_SOURCE_DIR}/shaders")
 set(BINARY_RESOURCES_HPP "${CMAKE_SOURCE_DIR}/include/Resources/binary_resources.hpp")
 
 file(MAKE_DIRECTORY "${SHADER_DIR}/bin")
-file(GLOB_RECURSE SHADER_INCLUDES "${SHADER_DIR}/*.inc")
 
 add_custom_command(
-    OUTPUT
-        "${SHADER_DIR}/bin/complex.spv"
-        "${SHADER_DIR}/bin/utilities.spv"
-    COMMAND ${GLSLC_EXECUTABLE} "${SHADER_DIR}/complex.comp"   -o "${SHADER_DIR}/bin/complex.spv"
+    OUTPUT "${SHADER_DIR}/bin/complex.spv"
+    COMMAND ${GLSLC_EXECUTABLE} "${SHADER_DIR}/complex.comp" -o "${SHADER_DIR}/bin/complex.spv"
+        -MD -MF "${SHADER_DIR}/bin/complex.d"
+    DEPENDS "${SHADER_DIR}/complex.comp"
+    DEPFILE "${SHADER_DIR}/bin/complex.d"
+    COMMENT "Compiling complex.comp to SPIR-V"
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT "${SHADER_DIR}/bin/utilities.spv"
     COMMAND ${GLSLC_EXECUTABLE} "${SHADER_DIR}/utilities.comp" -o "${SHADER_DIR}/bin/utilities.spv"
-    DEPENDS
-        "${SHADER_DIR}/complex.comp"
-        "${SHADER_DIR}/utilities.comp"
-        ${SHADER_INCLUDES}
-    COMMENT "Compiling GLSL shaders to SPIR-V"
+        -MD -MF "${SHADER_DIR}/bin/utilities.d"
+    DEPENDS "${SHADER_DIR}/utilities.comp"
+    DEPFILE "${SHADER_DIR}/bin/utilities.d"
+    COMMENT "Compiling utilities.comp to SPIR-V"
     VERBATIM
 )
 
@@ -210,11 +215,11 @@ install(TARGETS slcompute)
 
 install(FILES
     include/slcompute.h
-    include/GPGSL_Structures.h
-    include/GPGSL_func_ids.h
-    include/GPGSL_Program.h
-    include/GPGSL_ComputePool.h
-    include/GPGSL_ComputePool_private.h
+    include/SLC_Structures.h
+    include/SLC_func_ids.h
+    include/SLC_Program.h
+    include/SLC_ComputePool.h
+    include/SLC_ComputePool_private.h
     include/glm_inc.h
     include/bimap.h
     include/complex.h

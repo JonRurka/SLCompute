@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GPGSL_Program.h"
+#include "SLC_Program.h"
 #include "Compute/dynamic_compute.h"
-#include "GPGSL_Structures.h"
+#include "SLC_Structures.h"
 #include "glm_inc.h"
 
 namespace SLCompute {

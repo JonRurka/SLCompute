@@ -21,12 +21,12 @@
 read_buffer_float(IN_BUFFER_BIND, IN_BUFFER)
 readwrite_buffer_float(OUT_BUFFER_BIND, OUT_BUFFER)
 
-gsl_type read(uint index)
+slc_type read(uint index)
 {
 	return get_buffer_scalar(IN_BUFFER, index);
 }
 
-void write(uint index, gsl_type val)
+void write(uint index, slc_type val)
 {
 	set_buffer_scalar(OUT_BUFFER, index, val);
 }

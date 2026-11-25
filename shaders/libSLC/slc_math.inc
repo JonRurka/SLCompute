@@ -1,5 +1,5 @@
-#ifndef _GSL_MATH_H_
-#define _GSL_MATH_H_
+#ifndef _SLC_MATH_H_
+#define _SLC_MATH_H_
 
 
 
@@ -74,13 +74,13 @@
 
 /* other needlessly compulsive abstractions */
 
-#define GSL_IS_ODD(n)  ((n) & 1)
-#define GSL_IS_EVEN(n) (!(GSL_IS_ODD(n)))
-#define GSL_SIGN(x)    ((x) >= 0.0 ? 1 : -1)
+#define SLC_IS_ODD(n)  ((n) & 1)
+#define SLC_IS_EVEN(n) (!(SLC_IS_ODD(n)))
+#define SLC_SIGN(x)    ((x) >= 0.0 ? 1 : -1)
 
 /* Return nonzero if x is a real number, i.e. non NaN or infinite. */
-#define GSL_IS_REAL(x) (gsl_finite(x))
+#define SLC_IS_REAL(x) (slc_finite(x))
 
 
 
-#endif // __GSL_MATH_H__
+#endif // __SLC_MATH_H__

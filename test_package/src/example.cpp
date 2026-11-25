@@ -2,12 +2,12 @@
 #include <vector>
 #include <string>
 
-#include <GPGSL_Program.h>
-#include <GPGSL_ComputePool.h>
-#include <GPGSL_Structures.h>
+#include <SLC_Program.h>
+#include <SLC_ComputePool.h>
+#include <SLC_Structures.h>
 #include <complex.h>
 
-#include <GPGSL_ComputePool_private.h>
+#include <SLC_ComputePool_private.h>
 
 using namespace SLCompute;
 
@@ -48,7 +48,7 @@ int main() {
     ProgramController::Start(program);
 
     printf("Test_Package: Execute program kernel function.\n");
-    complex::gpgsl_complex_add(complex_buf_res, complex_buf_1, complex_buf_2);
+    complex::slc_complex_add(complex_buf_res, complex_buf_1, complex_buf_2);
 
     printf("Test_Package: Extract data.\n");
     std::vector<Complex> res_buf = pool_instance->Extract_Complex(complex_buf_res);

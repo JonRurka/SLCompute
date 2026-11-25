@@ -2,8 +2,8 @@
 
 #define USL_VULKAN 1
 #define GLSL
-#define GSL_FLOAT
-#include "libGSL/complex_imp.inc"
+#define SLC_FLOAT
+#include "libSLC/complex_imp.inc"
 
 #ifndef SIZE_X
 #define SIZE_X 64

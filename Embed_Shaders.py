@@ -75,7 +75,7 @@ initialized = true;
 
 }} // namespace Shader_Binaries
 }} // namespace Resources
-}} // namespace GPGSL
+}} // namespace SLC
 """
 
 print("Writing 'include\\Resources\\binary_resources.hpp'")

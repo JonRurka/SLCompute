@@ -1,7 +1,7 @@
-#ifndef _GSL_SYS_H_
-#define _GSL_SYS_H_
+#ifndef _SLC_SYS_H_
+#define _SLC_SYS_H_
 
-#include "gsl_lib_type.inc"
+#include "slc_lib_type.inc"
 
 #ifndef FABS
 #define FABS(val) abs(val)
@@ -15,7 +15,7 @@
 #define MIN(a,b) (min(a, b))
 #endif
 
-#define ROUNT_TO_INT(x) (GSL_CAST(int, round(x)))
+#define ROUNT_TO_INT(x) (SLC_CAST(int, round(x)))
 
 #ifdef GLSL
 #define ATAN2(y, x) atan(y, x)
@@ -31,10 +31,10 @@
 
 struct frexp_res
 {
-	gsl_type result;
+	slc_type result;
 	int exp;
 };
-STRUCT frexp_res frexp_res_new(gsl_type x, int exp)
+STRUCT frexp_res frexp_res_new(slc_type x, int exp)
 {
 	STRUCT frexp_res res;
 	res.result = x;
@@ -43,48 +43,48 @@ STRUCT frexp_res frexp_res_new(gsl_type x, int exp)
 }
 
 
-gsl_type gsl_pow_2(const gsl_type x) { return x*x;   }
-gsl_type gsl_pow_3(const gsl_type x) { return x*x*x; }
-gsl_type gsl_pow_4(const gsl_type x) { gsl_type x2 = x*x;   return x2*x2;    }
-gsl_type gsl_pow_5(const gsl_type x) { gsl_type x2 = x*x;   return x2*x2*x;  }
-gsl_type gsl_pow_6(const gsl_type x) { gsl_type x2 = x*x;   return x2*x2*x2; }
-gsl_type gsl_pow_7(const gsl_type x) { gsl_type x3 = x*x*x; return x3*x3*x;  }
-gsl_type gsl_pow_8(const gsl_type x) { gsl_type x2 = x*x;   gsl_type x4 = x2*x2; return x4*x4; }
-gsl_type gsl_pow_9(const gsl_type x) { gsl_type x3 = x*x*x; return x3*x3*x3; }
+slc_type slc_pow_2(const slc_type x) { return x*x;   }
+slc_type slc_pow_3(const slc_type x) { return x*x*x; }
+slc_type slc_pow_4(const slc_type x) { slc_type x2 = x*x;   return x2*x2;    }
+slc_type slc_pow_5(const slc_type x) { slc_type x2 = x*x;   return x2*x2*x;  }
+slc_type slc_pow_6(const slc_type x) { slc_type x2 = x*x;   return x2*x2*x2; }
+slc_type slc_pow_7(const slc_type x) { slc_type x3 = x*x*x; return x3*x3*x;  }
+slc_type slc_pow_8(const slc_type x) { slc_type x2 = x*x;   slc_type x4 = x2*x2; return x4*x4; }
+slc_type slc_pow_9(const slc_type x) { slc_type x3 = x*x*x; return x3*x3*x3; }
 
-gsl_type gsl_log1p (const gsl_type x);
-gsl_type gsl_expm1 (const gsl_type x);
-gsl_type gsl_hypot (const gsl_type x, const gsl_type y);
-gsl_type gsl_hypot3 (const gsl_type x, const gsl_type y, const gsl_type z);
-gsl_type gsl_acosh (const gsl_type x);
-gsl_type gsl_asinh (const gsl_type x);
-gsl_type gsl_atanh (const gsl_type x);
+slc_type slc_log1p (const slc_type x);
+slc_type slc_expm1 (const slc_type x);
+slc_type slc_hypot (const slc_type x, const slc_type y);
+slc_type slc_hypot3 (const slc_type x, const slc_type y, const slc_type z);
+slc_type slc_acosh (const slc_type x);
+slc_type slc_asinh (const slc_type x);
+slc_type slc_atanh (const slc_type x);
 
-bool gsl_isnan (const gsl_type x);
-bool gsl_isinf (const gsl_type x);
-bool gsl_finite (const gsl_type x);
+bool slc_isnan (const slc_type x);
+bool slc_isinf (const slc_type x);
+bool slc_finite (const slc_type x);
 
-gsl_type gsl_nan (void);
-gsl_type gsl_posinf (void);
-gsl_type gsl_neginf (void);
-gsl_type gsl_fdiv (const gsl_type x, const gsl_type y);
+slc_type slc_nan (void);
+slc_type slc_posinf (void);
+slc_type slc_neginf (void);
+slc_type slc_fdiv (const slc_type x, const slc_type y);
 
-gsl_type gsl_ldexp(const gsl_type x, const int e);
-STRUCT frexp_res gsl_frexp (const gsl_type x, int e);
+slc_type slc_ldexp(const slc_type x, const int e);
+STRUCT frexp_res slc_frexp (const slc_type x, int e);
 
-int gsl_fcmp (const gsl_type x1, const gsl_type x2, const gsl_type epsilon);
+int slc_fcmp (const slc_type x1, const slc_type x2, const slc_type epsilon);
 
 
 
-gsl_type gsl_log1p(const gsl_type x)
+slc_type slc_log1p(const slc_type x)
 {
-    gsl_type y, z;
+    slc_type y, z;
     y = 1.0 + x;
     z = y - 1.0;
     return log(y) - (z - x) / y; /* cancels errors with IEEE arithmetic */
 }
 
-gsl_type gsl_expm1 (const gsl_type x)
+slc_type slc_expm1 (const slc_type x)
 {
 	/* FIXME: this should be improved */
 
@@ -92,9 +92,9 @@ gsl_type gsl_expm1 (const gsl_type x)
 	{
 		/* Compute the taylor series S = x + (1/2!) x^2 + (1/3!) x^3 + ... */
 
-		gsl_type i = 1.0;
-		gsl_type sum = x;
-		gsl_type term = x / 1.0;
+		slc_type i = 1.0;
+		slc_type sum = x;
+		slc_type term = x / 1.0;
 
 		do
 		{
@@ -102,7 +102,7 @@ gsl_type gsl_expm1 (const gsl_type x)
 			term *= x/i;
 			sum += term;
 		}
-		while (FABS(term) > FABS(sum) * GSL_DBL_EPSILON) ;
+		while (FABS(term) > FABS(sum) * SLC_DBL_EPSILON) ;
 
 		return sum;
 	}
@@ -112,19 +112,19 @@ gsl_type gsl_expm1 (const gsl_type x)
 	}
 }
 
-gsl_type gsl_hypot (const gsl_type x, const gsl_type y)
+slc_type slc_hypot (const slc_type x, const slc_type y)
 {
-	gsl_type xabs = FABS(x);
-	gsl_type yabs = FABS(y);
-	gsl_type min;
-	gsl_type max;
+	slc_type xabs = FABS(x);
+	slc_type yabs = FABS(y);
+	slc_type min;
+	slc_type max;
 
 	/* Follow the optional behavior of the ISO C standard and return
 	+Inf when any of the argument is +-Inf, even if the other is NaN.
 	http://pubs.opengroup.org/onlinepubs/009695399/functions/hypot.html */
-	if (gsl_isinf(x) || gsl_isinf(y)) 
+	if (slc_isinf(x) || slc_isinf(y))
 	{
-		return GSL_POSINF;
+		return SLC_POSINF;
 	}
 
 	if (xabs < yabs) {
@@ -141,17 +141,17 @@ gsl_type gsl_hypot (const gsl_type x, const gsl_type y)
 	}
 
 	{
-		gsl_type u = min / max ;
+		slc_type u = min / max ;
 		return max * sqrt (1.0 + u * u) ;
 	}
 }
 
-gsl_type gsl_hypot3(const gsl_type x, const gsl_type y, const gsl_type z)
+slc_type slc_hypot3(const slc_type x, const slc_type y, const slc_type z)
 {
-  gsl_type xabs = FABS(x);
-  gsl_type yabs = FABS(y);
-  gsl_type zabs = FABS(z);
-  gsl_type w = MAX(xabs, MAX(yabs, zabs));
+  slc_type xabs = FABS(x);
+  slc_type yabs = FABS(y);
+  slc_type zabs = FABS(z);
+  slc_type w = MAX(xabs, MAX(yabs, zabs));
 
 	if (w == 0.0)
 	{
@@ -159,20 +159,20 @@ gsl_type gsl_hypot3(const gsl_type x, const gsl_type y, const gsl_type z)
 	}
 	else
 	{
-		gsl_type r = w * sqrt((xabs / w) * (xabs / w) +
+		slc_type r = w * sqrt((xabs / w) * (xabs / w) +
 							  (yabs / w) * (yabs / w) +
 							  (zabs / w) * (zabs / w));
 		return r;
 	}
 }
 
-gsl_type gsl_acosh (const gsl_type x)
+slc_type slc_acosh (const slc_type x)
 {
 	#ifdef GLSL
 	return acosh(x);
 	#else
 		
-	if (x > 1.0 / GSL_SQRT_EPSILON)
+	if (x > 1.0 / SLC_SQRT_EPSILON)
 	{
 		return log (x) + M_LN2;
 	}
@@ -182,8 +182,8 @@ gsl_type gsl_acosh (const gsl_type x)
 	}
 	else if (x > 1.0)
 	{
-		gsl_type t = x - 1.0;
-		return gsl_log1p (t + sqrt (2.0 * t + t * t));
+		slc_type t = x - 1.0;
+		return slc_log1p (t + sqrt (2.0 * t + t * t));
 	}
 	else if (x == 1.0)
 	{
@@ -191,20 +191,20 @@ gsl_type gsl_acosh (const gsl_type x)
 	}
 	else
 	{
-		return GSL_NAN;
+		return SLC_NAN;
 	}
 	#endif
 }
 
-gsl_type gsl_asinh (const gsl_type x)
+slc_type slc_asinh (const slc_type x)
 {
 	#ifdef GLSL
 	return asinh(x);
 	#else
-	gsl_type a = FABS (x);
-	gsl_type s = (x < 0.0) ? -1.0 : 1.0;
+	slc_type a = FABS (x);
+	slc_type s = (x < 0.0) ? -1.0 : 1.0;
 
-	if (a > 1.0 / GSL_SQRT_EPSILON)
+	if (a > 1.0 / SLC_SQRT_EPSILON)
 	{
 		return s * (log (a) + M_LN2);
 	}
@@ -212,10 +212,10 @@ gsl_type gsl_asinh (const gsl_type x)
 	{
 		return s * log (2.0 * a + 1.0 / (a + sqrt (a * a + 1.0)));
 	}
-	else if (a > GSL_SQRT_EPSILON)
+	else if (a > SLC_SQRT_EPSILON)
 	{
-		gsl_type a2 = a * a;
-		return s * gsl_log1p (a + a2 / (1.0 + sqrt (1.0 + a2)));
+		slc_type a2 = a * a;
+		return s * slc_log1p (a + a2 / (1.0 + sqrt (1.0 + a2)));
 	}
 	else
 	{
@@ -224,26 +224,26 @@ gsl_type gsl_asinh (const gsl_type x)
 	#endif
 }
 
-gsl_type gsl_atanh (const gsl_type x)
+slc_type slc_atanh (const slc_type x)
 {
-	gsl_type a = FABS (x);
-	gsl_type s = (x < 0.0) ? -1.0 : 1.0;
+	slc_type a = FABS (x);
+	slc_type s = (x < 0.0) ? -1.0 : 1.0;
 
 	if (a > 1.0)
 	{
-		return GSL_NAN;
+		return SLC_NAN;
 	}
 	else if (a == 1.0)
 	{
-		return (x < 0.0) ? GSL_NEGINF : GSL_POSINF;
+		return (x < 0.0) ? SLC_NEGINF : SLC_POSINF;
 	}
 	else if (a >= 0.5)
 	{
-		return s * 0.5 * gsl_log1p (2.0 * a / (1.0 - a));
+		return s * 0.5 * slc_log1p (2.0 * a / (1.0 - a));
 	}
-	else if (a > GSL_EPSILON)
+	else if (a > SLC_EPSILON)
 	{
-		return s * 0.5 * gsl_log1p (2.0 * a + 2.0 * a * a / (1.0 - a));
+		return s * 0.5 * slc_log1p (2.0 * a + 2.0 * a * a / (1.0 - a));
 	}
 	else
 	{
@@ -251,7 +251,7 @@ gsl_type gsl_atanh (const gsl_type x)
 	}
 }
 
-bool gsl_isnan (const gsl_type x)
+bool slc_isnan (const slc_type x)
 {
 	//int status = (x != x);
 	//return status;
@@ -260,42 +260,42 @@ bool gsl_isnan (const gsl_type x)
 	//return (asuint(x) & 0x7fffffff) > 0x7f800000;
 }
 
-bool gsl_isinf (const gsl_type x)
+bool slc_isinf (const slc_type x)
 {
 	return isinf(x);
 }
 
-bool gsl_finite (const gsl_type x)
+bool slc_finite (const slc_type x)
 {
 	#ifdef HLSL
 	return isfinite (x);
 	#else
-	const gsl_type y = x - x;
+	const slc_type y = x - x;
 	bool status = (y == y);
 	return status;
 	#endif
 }
 
-gsl_type gsl_nan (void)
+slc_type slc_nan (void)
 {
 	return 0.0 / 0.0;
 }
 
-gsl_type gsl_posinf (void)
+slc_type slc_posinf (void)
 {
   return +1.0 / 0.0;
 }
 
-gsl_type gsl_neginf (void)
+slc_type slc_neginf (void)
 {
   return -1.0 / 0.0;
 }
 
-#ifndef gsl_coerce
-#define gsl_coerce(x) GSL_TYPE(x)
+#ifndef slc_coerce
+#define slc_coerce(x) SLC_TYPE(x)
 #endif
 
-gsl_type gsl_ldexp (const gsl_type x, const int e)
+slc_type slc_ldexp (const slc_type x, const int e)
 {
 	int ex;
 
@@ -305,10 +305,10 @@ gsl_type gsl_ldexp (const gsl_type x, const int e)
 	}
 
 	{
-		STRUCT frexp_res fre_res = gsl_frexp(x, ex);
+		STRUCT frexp_res fre_res = slc_frexp(x, ex);
 		ex = fre_res.exp;
-		gsl_type y = fre_res.result;//gsl_frexp (x, &ex);
-		gsl_type e2 = e + ex, p2; // TODO
+		slc_type y = fre_res.result;//slc_frexp (x, &ex);
+		slc_type e2 = e + ex, p2; // TODO
 
 		if (e2 >= MAX_EXP)
 		{
@@ -326,14 +326,14 @@ gsl_type gsl_ldexp (const gsl_type x, const int e)
 	}
 }
 
-STRUCT frexp_res gsl_frexp (const gsl_type x, int e)
+STRUCT frexp_res slc_frexp (const slc_type x, int e)
 {
 	if (x == 0.0)
 	{
 		e = 0;
 		return frexp_res_new(0.0, e);
 	}
-	else if (!gsl_finite (x))
+	else if (!slc_finite (x))
 	{
 		e = 0;
 		return frexp_res_new(x, e);
@@ -345,9 +345,9 @@ STRUCT frexp_res gsl_frexp (const gsl_type x, int e)
 	}
 	else
 	{
-		gsl_type ex = ceil (log (FABS (x)) / M_LN2);
-		int ei = GSL_CAST(int, ex);
-		gsl_type f;
+		slc_type ex = ceil (log (FABS (x)) / M_LN2);
+		int ei = SLC_CAST(int, ex);
+		slc_type f;
 
 		/* Prevent underflow and overflow of 2**(-ei) */
 		if (ei < MIN_EXP)
@@ -358,7 +358,7 @@ STRUCT frexp_res gsl_frexp (const gsl_type x, int e)
 
 		f = x * pow (2.0, -ei);
 
-		if (!gsl_finite (f))
+		if (!slc_finite (f))
 		{
 			/* This should not happen */
 			e = 0;
@@ -382,22 +382,22 @@ STRUCT frexp_res gsl_frexp (const gsl_type x, int e)
 	}
 }
 
-int gsl_fcmp (const gsl_type x1, const gsl_type x2, const gsl_type epsilon)
+int slc_fcmp (const slc_type x1, const slc_type x2, const slc_type epsilon)
 {
 	int exponent;
-	gsl_type delta, difference;
+	slc_type delta, difference;
 
 	/* Find exponent of largest absolute value */
 
 	{
-		gsl_type max = (FABS (x1) > FABS (x2)) ? x1 : x2;
+		slc_type max = (FABS (x1) > FABS (x2)) ? x1 : x2;
 
-		exponent = gsl_frexp (max, exponent).exp;
+		exponent = slc_frexp (max, exponent).exp;
 	}
 
 	/* Form a neighborhood of size  2 * delta */
 
-	delta = gsl_ldexp (epsilon, exponent);
+	delta = slc_ldexp (epsilon, exponent);
 
 	difference = x1 - x2;
 
@@ -415,9 +415,9 @@ int gsl_fcmp (const gsl_type x1, const gsl_type x2, const gsl_type epsilon)
 	}
 }
 
-gsl_type gsl_pow_uint(gsl_type x, uint n)
+slc_type slc_pow_uint(slc_type x, uint n)
 {
-	gsl_type value = 1.0;
+	slc_type value = 1.0;
 
 	/* repeated squaring method 
 	 * returns 0.0^0 = 1.0, so continuous in x
@@ -431,7 +431,7 @@ gsl_type gsl_pow_uint(gsl_type x, uint n)
 	return value;
 }
 
-gsl_type gsl_pow_int(gsl_type x, int n)
+slc_type slc_pow_int(slc_type x, int n)
 {
 	uint un;
 
@@ -442,62 +442,62 @@ gsl_type gsl_pow_int(gsl_type x, int n)
 		un = n;
 	}
 
-	return gsl_pow_uint(x, un);
+	return slc_pow_uint(x, un);
 }
 
 #ifndef hypot
-#define hypot gsl_hypot
+#define hypot slc_hypot
 #endif
 
 #ifndef log1p
-#define log1p gsl_log1p
+#define log1p slc_log1p
 #endif
 
 #ifndef expm1
-#define expm1 gsl_expm1
+#define expm1 slc_expm1
 #endif
 
 
 #ifndef GLSL
 
 #ifndef acosh
-#define acosh gsl_acosh
+#define acosh slc_acosh
 #endif
 
 #ifndef asinh
-#define asinh gsl_asinh
+#define asinh slc_asinh
 #endif
 
 #ifndef atanh
-#define atanh gsl_atanh
+#define atanh slc_atanh
 #endif
 
 #endif
 
 #ifndef ldexp
-#define ldexp gsl_ldexp
+#define ldexp slc_ldexp
 #endif
 
 #ifndef frexp
-#define frexp gsl_frexp
+#define frexp slc_frexp
 #endif
 
 #ifndef isinf
-//#define isinf gsl_isinf
+//#define isinf slc_isinf
 #endif
 
 #ifndef HLSL
 #ifndef isfinite
-#define isfinite gsl_finite
+#define isfinite slc_finite
 #endif
 #endif
 
 #ifndef finite
-#define finite gsl_finite
+#define finite slc_finite
 #endif
 
 #ifndef isnan
-#define isnan gsl_isnan
+#define isnan slc_isnan
 #endif
 
-#endif //__GSL_SYS_H__
+#endif //__SLC_SYS_H__

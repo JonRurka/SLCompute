@@ -1,10 +1,10 @@
-#include "GPGSL_Program.h"
+#include "SLC_Program.h"
 #include "Compute/dynamic_compute.h"
 #include "Compute/InterfaceIncludes_private.h"
 #include "Resources/binary_resources.hpp"
-#include "GPGSL_func_ids.h"
-#include "GPGSL_Structures.h"
-#include "GPGSL_ComputePool_private.h"
+#include "SLC_func_ids.h"
+#include "SLC_Structures.h"
+#include "SLC_ComputePool_private.h"
 
 //#include "src/resources/shader_bin.hpp"
 
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <random>
 
-#include "GPGSL_ComputePool_private.h"
+#include "SLC_ComputePool_private.h"
 #include "Logger.h"
 
 #define WORKGROUP_SIZE_X 64
@@ -310,7 +310,7 @@ void ProgramController::Initialize()
 	m_controller = ComputeInterface::GetComputeController(ComputeInterface::VULKAN, m_controllerInfo);
 	Logger::LogDebug(LOG_LOC, "Program %d: Create Program Controller.", m_prog_inst);
 
-	//GPGSL::Resources::complex().size();
+	//SLC::Resources::complex().size();
 
 	std::vector<uint8_t> data;
 

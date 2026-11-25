@@ -7,10 +7,10 @@
 #include <unordered_set>
 #include <cassert>
 #include "bimap.h"
-#include "GPGSL_func_ids.h"
+#include "SLC_func_ids.h"
 #include "Compute/ForwardDeclarations.h"
 #include "Compute/dynamic_compute.h"
-#include "GPGSL_Structures.h"
+#include "SLC_Structures.h"
 #include "glm_inc.h"
 
 using namespace DynamicCompute::Compute;

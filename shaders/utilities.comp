@@ -92,14 +92,10 @@ void main()
 
 #define USL_VULKAN 1
 #define GLSL
-#define GSL_FLOAT
+#define SLC_FLOAT
 
-#include "libUSL/USL.inc"
-#include "libGSL/standard_buffers.inc"
-
-// Macros and settings
-#define SETTINGS_FUNC() (SETTINGS_BUFFER[0].x)
-#define NUM_ELEMENTS() (SETTINGS_BUFFER[0].y)
+#include "libSLC/slc_core.inc"
+#include "libSLC/standard_buffers.inc"
 
 // Main entry point
 void Execute(uint x){
