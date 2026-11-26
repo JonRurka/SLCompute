@@ -65,6 +65,7 @@ namespace DynamicCompute {
                 VkCommandBuffer* mTransferCmdBuffer{ nullptr };
 
                 bool mSeperateTransferQueue{ false };
+                VkSharingMode mSharingMode{ VK_SHARING_MODE_EXCLUSIVE };
                 std::vector<uint32_t> mAllQueueFamilies;
 
                 bool mDestroyed{ false };
@@ -118,7 +119,6 @@ namespace DynamicCompute {
             private:
                 ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDeviceSize size, bool external = false);
 
-                void getAllQueueFamilies();
 
                 void initExternalCopy();
 
@@ -278,6 +278,7 @@ namespace DynamicCompute {
                 VkCommandBuffer mTransferCmdBuffer{};
 
                 VkFence mWaitFence{ nullptr };
+                VmaAllocator mVmaAllocator{};
 
                 bool mDestroyed{ false };
                 bool mCanCallDispose{ false };
@@ -326,6 +327,10 @@ namespace DynamicCompute {
 
                 VkFence* GetWaitFence() {
                     return &mWaitFence;
+                }
+
+                VmaAllocator* GetVmaAllocator() {
+                    return &mVmaAllocator;
                 }
 
                 ComputeProgram* Add_Program(std::string name);

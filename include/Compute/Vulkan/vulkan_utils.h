@@ -24,10 +24,10 @@ namespace DynamicCompute {
             namespace Utilities {
 
                 
-                void Create_VMA_Allocator(VkInstance inst, VkPhysicalDevice physicalDevice, VkDevice device);
+                void Create_VMA_Allocator(VkInstance inst, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator& out_allocator);
+                void Destroy_VMA_Allocator(VmaAllocator allocator);
                 //void Create_NVVK_Allocator(VkPhysicalDevice physicalDevice, VkDevice device);
 
-                VmaAllocator* Get_VMA_Allocator();
                 //nvvk::ExportResourceAllocatorDedicated* Get_NVVK_Allocator();
 
                 // structures
@@ -179,6 +179,7 @@ namespace DynamicCompute {
                 void CreateBuffer(
                     VkPhysicalDevice& physicalDevice,
                     VkDevice& device,
+                    VmaAllocator& allocator,
                     VkDeviceSize size,
                     VkBufferUsageFlags usage,
                     VkSharingMode sharingMode,
@@ -195,6 +196,7 @@ namespace DynamicCompute {
                 void CreateBuffer(
                     VkPhysicalDevice& physicalDevice,
                     VkDevice& device,
+                    VmaAllocator& allocator,
                     size_t stride,
                     size_t num_elements,
                     VkBufferUsageFlags usage,
@@ -231,7 +233,7 @@ namespace DynamicCompute {
 
                 void CopyBuffer(VkDevice& device, VkQueue& queue, VkCommandBuffer& commandBuffer, VkFence& wait_fence, VkBuffer& srcBuffer, VkBuffer& dstBuffer, int src_start, int dst_start, VkDeviceSize size);
 
-                void FlushToBuffer(VkDevice& device, VmaAllocation& allocation, VkDeviceSize size, void*& data, void* src, bool unmap);
+                void FlushToBuffer(VkDevice& device, VmaAllocator& allocator, VmaAllocation& allocation, VkDeviceSize size, void*& data, void* src, bool unmap);
             
                 void CopyBufferToImage(VkDevice& device, VkQueue& queue, VkCommandPool& cmdPool, VkFence& wait_fence, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
                 

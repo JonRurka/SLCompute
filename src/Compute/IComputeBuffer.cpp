@@ -63,6 +63,7 @@ size_t IComputeBuffer::GetSize()
 void IComputeBuffer::Dispose()
 {
 	p_inst->Dispose();
+	delete p_inst;
 	p_inst = nullptr;
 }
 

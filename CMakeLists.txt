@@ -90,61 +90,6 @@ LIST(APPEND slc_sources
 
 
 
-
-
-
-
-
-
-
-
-LIST(APPEND slc_headers_old
-        # Compute library
-        include/Compute/ForwardDeclarations.h
-        include/Compute/vulkan_utils.h
-        include/Compute/ComputeEngine.h
-        include/Compute/ComputeController_VK.h
-        include/Compute/ComputeProgram_VK.h
-        include/Compute/ComputeBuffer_VK.h
-        include/Compute/InterfaceIncludes_private.h
-        include/Compute/PlatformStructures_private.h
-        include/Compute/ComputeInterface_private.h
-        include/Compute/IComputeController_private.h
-        include/Compute/IComputeProgram_private.h
-        include/Compute/IComputeBuffer_private.h
-        include/Compute/std_includes.h
-        include/Compute/dynamic_compute.h
-        include/Compute/InterfaceIncludes.h
-        include/Compute/PlatformStructures.h
-        include/Compute/IComputeBuffer.h
-        include/Compute/IComputeProgram.h
-        include/Compute/IComputeController.h
-        include/Compute/ComputeInterface.h
-)
-set(slc_sources_old
-        src/slcompute.cpp
-
-        # Compute library
-        src/Compute/vulkan_utils.cpp
-        src/Compute/ComputeEngine.cpp
-        src/Compute/ComputeController_VK.cpp
-        src/Compute/ComputeProgram_VK.cpp
-        src/Compute/ComputeBuffer_VK.cpp
-        src/Compute/PlatformStructures.cpp
-        src/Compute/IComputeBuffer.cpp
-        src/Compute/IComputeProgram.cpp
-        src/Compute/IComputeController.cpp
-        src/Compute/ComputeInterface.cpp
-
-        # science library
-        src/SLC_Program.cpp
-        src/SLC_ComputePool.cpp
-        src/SLC_ComputePool_private.cpp
-        src/complex.cpp
-        include/bimap.h
-)
-
-
 # Prevent stale system-path cache entries from winning over Conan-managed packages
 foreach(_pkg VulkanHeaders VulkanLoader VulkanMemoryAllocator glm glfw3)
     unset(${_pkg}_DIR CACHE)

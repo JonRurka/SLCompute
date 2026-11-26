@@ -16,10 +16,6 @@
 #include "SLC_ComputePool_private.h"
 #include "Logger.h"
 
-#define WORKGROUP_SIZE_X 64
-#define WORKGROUP_SIZE_Y 1
-#define WORKGROUP_SIZE_Z 1
-
 #define VEC4_SIZE (sizeof(float) * 4)
 
 using namespace SLCompute;
@@ -260,10 +256,7 @@ void ProgramController::Execute(std::string p_name, int size_x, int size_y, int 
 
 	SL_ASSERT(m_programs.count(p_name) > 0, "Program does not exist.");
 
-	m_programs[p_name]->RunKernel(kernel_name, 
-		std::max(1, (size_x / WORKGROUP_SIZE_X) + 1), 
-		std::max(1, (size_y / WORKGROUP_SIZE_Y) + 1), 
-		std::max(1, (size_z / WORKGROUP_SIZE_Z) + 1));
+	m_programs[p_name]->RunKernel(kernel_name, size_x, size_y, size_z);
 }
 
 void ProgramController::Execute(program_id p_id, int size_x, int size_y, int size_z)
@@ -274,10 +267,7 @@ void ProgramController::Execute(program_id p_id, int size_x, int size_y, int siz
 	SL_ASSERT(m_programs_list.size() > p_id, "Program id invalid.");
 	SL_ASSERT(m_programs_list[p_id], "Program does not exist.");
 
-	m_programs_list[p_id]->RunKernel(kernel_name,
-		std::max(1, (size_x / WORKGROUP_SIZE_X) + 1),
-		std::max(1, (size_y / WORKGROUP_SIZE_Y) + 1),
-		std::max(1, (size_z / WORKGROUP_SIZE_Z) + 1));
+	m_programs_list[p_id]->RunKernel(kernel_name, size_x, size_y, size_z);
 }
 
 void ProgramController::Enable(Programs p) {

@@ -485,7 +485,7 @@ VkResult ComputeContext::createLogicalDevice()
 	vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(mDevice, "vkGetMemoryWin32HandleKHR");
 #endif
 
-	Utilities::Create_VMA_Allocator(*mInstance, mPhysicalDevice, mDevice);
+	Utilities::Create_VMA_Allocator(*mInstance, mPhysicalDevice, mDevice, mVmaAllocator);
 	//Utilities::Create_NVVK_Allocator(mPhysicalDevice, mDevice);
 	//load_GL(window::sysGetProcAddress);
 
@@ -563,7 +563,9 @@ void ComputeContext::Dispose() {
 	if (mDestroyed || !mCanCallDispose)
 		return;
 
-	//printf("Dispose command pools.\n");
+	vkDeviceWaitIdle(mDevice);
+
+	//printf("Dispose command pools.\n")
 	if (IncludeGraphics)
 		vkDestroyCommandPool(mDevice, mGraphicsCmdPool, nullptr);
 	vkDestroyCommandPool(mDevice, mComputeCmdPool, nullptr);
@@ -579,6 +581,10 @@ void ComputeContext::Dispose() {
 
 	programs.clear();
 	mBuffers.clear();
+
+	vkDestroyFence(mDevice, mWaitFence, nullptr);
+
+	Utilities::Destroy_VMA_Allocator(mVmaAllocator);
 
 	//printf("Dispose logical device\n");
 	vkDestroyDevice(mDevice, nullptr);
@@ -765,9 +771,8 @@ int ComputeKernel::Execute(uint32_t x, uint32_t y, uint32_t z)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	//vkQueueWaitIdle(*mComputeQueue);
 	if (vkBeginCommandBuffer(*mComputeCmdBuffer, &beginInfo) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to begin recording command buffer!");
 	}
@@ -826,7 +831,7 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vkQueueWaitIdle(*mComputeQueue);
 	if (vkBeginCommandBuffer(*mComputeCmdBuffer, &beginInfo) != VK_SUCCESS) {
@@ -883,13 +888,6 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 		submits.push_back(submitInfo);
 	}
 	
-	/*for (int i = 0; i < num; i++) {
-		VkFence f_fence = (i == num - 1) ? mFinished_fence : nullptr;
-		if (vkQueueSubmit(*mComputeQueue, 1, &submits[i], f_fence) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to submit compute command buffer!");
-		}
-	}*/
-
 	if (vkQueueSubmit(*mComputeQueue, num, submits.data(), mFinished_fence) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to submit compute command buffer!");
 	}
@@ -901,8 +899,9 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 	vkResetFences(*mDevice, 1, &mFinished_fence);
 	//printf("ComputeKernel::Execute: Finish execute wait '%s'\n", mName);
 
-	return 0;
-
+	for (VkSemaphore s : semaphores) {
+		mAvailable_Semaphore.push(s);
+	}
 
 	return 0;
 }
@@ -1030,7 +1029,15 @@ ComputeBuffer::ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDevice
 	mTransferQueue = context->GetPreferedTransferQueue();
 	mTransferCmdBuffer = context->GetPreferedTransferCmdBuffer();
 
-	getAllQueueFamilies();
+	Utilities::QueueFamilyIndices indices = context->getQueueFamilyIndices();
+	uint32_t computeFamily  = indices.computeFamily.value();
+	uint32_t transferFamily = indices.transferFamily.value();
+	if (computeFamily == transferFamily) {
+		mSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	} else {
+		mSharingMode = VK_SHARING_MODE_CONCURRENT;
+		mAllQueueFamilies = { computeFamily, transferFamily };
+	}
 
 	mIs_External = external;
 
@@ -1056,6 +1063,8 @@ ComputeBuffer::ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDevice
 	}
 
 	if (external) {
+		SL_ASSERT(false, "External buffer support is not implemented.");
+
 		//nvvk::ExportResourceAllocatorDedicated* alloc = Utilities::Get_NVVK_Allocator();
 
 		// VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
@@ -1095,9 +1104,10 @@ ComputeBuffer::ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDevice
 		Utilities::CreateBuffer(
 			*mPhysicalDevice,
 			*mLogicalDevice,
+			*mContext->GetVmaAllocator(),
 			mSize,
 			VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | mTransfer_flag,
-			VK_SHARING_MODE_CONCURRENT,
+			mSharingMode,
 			external,
 			(VkBufferCreateFlags)0,
 			(VmaAllocationCreateFlags)0,
@@ -1114,12 +1124,13 @@ ComputeBuffer::ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDevice
 	Utilities::CreateBuffer(
 		*mPhysicalDevice,
 		*mLogicalDevice,
+		*mContext->GetVmaAllocator(),
 		mSize,
 		VK_BUFFER_USAGE_TRANSFER_DST_BIT | mStage_transfer_flag,
-		VK_SHARING_MODE_CONCURRENT,
+		mSharingMode,
 		false,
 		(VkBufferCreateFlags)0,
-		(VmaAllocationCreateFlags)0,
+		VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
 		VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		mAllQueueFamilies,
@@ -1192,7 +1203,7 @@ int ComputeBuffer::SetData(void* src_data, int DstStart, int size)
 	//printf("ComputeBuffer::SetData: Start: %i\n", size);
 	//vkQueueWaitIdle(*mTransferQueue);
 	//Logger::LogDebug("VK_Compute_Buffer", "FlushToBuffer");
-	Utilities::FlushToBuffer(*mLogicalDevice, stagingBufferAllocation, static_cast<uint64_t>(size), maped_data, src_data, true);
+	Utilities::FlushToBuffer(*mLogicalDevice, *mContext->GetVmaAllocator(), stagingBufferAllocation, static_cast<uint64_t>(size), maped_data, src_data, true);
 
 	//Logger::LogDebug("VK_Compute_Buffer", "CopyBuffer");
 	Utilities::CopyBuffer(*mLogicalDevice, *mTransferQueue, *mTransferCmdBuffer, *mContext->GetWaitFence(), stagingBuffer, mBuffer, 0, DstStart, static_cast<uint64_t>(size));
@@ -1235,10 +1246,10 @@ int ComputeBuffer::GetData(void* outData, int SrcStart, int size)
 	Utilities::endSingleTimeCommands(*mLogicalDevice, *mTransferCmdBuffer, *mTransferQueue, *mContext->GetWaitFence());
 
 	void* maped_data;
-	VkResult map_res = vmaMapMemory(*Utilities::Get_VMA_Allocator(), stagingBufferAllocation, &maped_data);
+	VkResult map_res = vmaMapMemory(*mContext->GetVmaAllocator(), stagingBufferAllocation, &maped_data);
 	SL_ASSERT(map_res == VK_SUCCESS, "vmaMapMemory failed");
 	memcpy(outData, maped_data, static_cast<size_t>(size));
-	vmaUnmapMemory(*Utilities::Get_VMA_Allocator(), stagingBufferAllocation);
+	vmaUnmapMemory(*mContext->GetVmaAllocator(), stagingBufferAllocation);
 
 	return 0;
 }
@@ -1268,22 +1279,6 @@ int ComputeBuffer::CopyTo(ComputeBuffer* other, int srcStart, int dstStart, int 
 	return 0;
 }
 
-void ComputeBuffer::getAllQueueFamilies()
-{
-	std::vector<VkQueueFamilyProperties> queueFamilies = Utilities::GetPhysicalDeviceQueueFamilyProperties(*mPhysicalDevice);
-
-	int i = 0;
-	for (auto queueFam : queueFamilies) {
-		if ((queueFam.queueFlags & VK_QUEUE_TRANSFER_BIT) ||
-			(queueFam.queueFlags & VK_QUEUE_COMPUTE_BIT) ||
-			(queueFam.queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-			
-			mAllQueueFamilies.push_back(i);
-			//printf("ComputeBuffer: Queue Family: %i\n", i);
-			i++;
-		}
-	}
-}
 
 void ComputeBuffer::initExternalCopy()
 {
@@ -1475,10 +1470,10 @@ void ComputeBuffer::Dispose() {
 #endif
 	}
 	else {
-		vmaDestroyBuffer(*Utilities::Get_VMA_Allocator(), mBuffer, mBufferAllocation);
+		vmaDestroyBuffer(*mContext->GetVmaAllocator(), mBuffer, mBufferAllocation);
 	}
 
-	vmaDestroyBuffer(*Utilities::Get_VMA_Allocator(), stagingBuffer, stagingBufferAllocation);
+	vmaDestroyBuffer(*mContext->GetVmaAllocator(), stagingBuffer, stagingBufferAllocation);
 
 	mDestroyed = true;
 

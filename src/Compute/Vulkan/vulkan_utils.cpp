@@ -12,26 +12,26 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace DynamicCompute::Compute::VK;
 
-namespace {
-    VmaAllocator vma_allocator;
-    //nvvk::ExportResourceAllocatorDedicated nvvk_allocator;
-}
-
-void Utilities::Create_VMA_Allocator(VkInstance inst, VkPhysicalDevice physicalDevice, VkDevice device)
+void Utilities::Create_VMA_Allocator(VkInstance inst, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator& out_allocator)
 {
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
     vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
 
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
-    allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_KHR_EXTERNAL_MEMORY_WIN32_BIT;
+    //allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_KHR_EXTERNAL_MEMORY_WIN32_BIT;
     allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_2;
     allocatorCreateInfo.physicalDevice = physicalDevice;
     allocatorCreateInfo.device = device;
     allocatorCreateInfo.instance = inst;
     allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
-    vmaCreateAllocator(&allocatorCreateInfo, &vma_allocator);
+    vmaCreateAllocator(&allocatorCreateInfo, &out_allocator);
+}
+
+void Utilities::Destroy_VMA_Allocator(VmaAllocator allocator)
+{
+    vmaDestroyAllocator(allocator);
 }
 
 /*
@@ -39,11 +39,6 @@ void Utilities::Create_NVVK_Allocator(VkPhysicalDevice physicalDevice, VkDevice 
 {
     nvvk_allocator.init(device, physicalDevice);
 }*/
-
-VmaAllocator* Utilities::Get_VMA_Allocator()
-{
-    return &vma_allocator;
-}
 
 /*
 nvvk::ExportResourceAllocatorDedicated* Utilities::Get_NVVK_Allocator()
@@ -377,10 +372,12 @@ Utilities::QueueFamilyIndices Utilities::findQueueFamilies(VkPhysicalDevice devi
             indices.transferFamily = i;
             //printf("Found Seperate transfer queue Family: %i\n", i);
         }
+
+        i++;
     }
 
-    i = 0;
     if (!indices.computeFamily.has_value() || !indices.transferFamily.has_value()) {
+        i = 0;
         for (const auto& queueFam : queueFamilies) {
             if ((queueFam.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
                 (queueFam.queueFlags & VK_QUEUE_COMPUTE_BIT)) {
@@ -389,6 +386,7 @@ Utilities::QueueFamilyIndices Utilities::findQueueFamilies(VkPhysicalDevice devi
                 //printf("Found combined queue Family: %i\n", i);
                 break;
             }
+            i++;
         }
     }
 
@@ -530,6 +528,7 @@ void Utilities::UpdateDescriptorSets_StorageBuffers(VkDevice& device, VkDescript
 void Utilities::CreateBuffer(
     VkPhysicalDevice& physicalDevice,
     VkDevice& device,
+    VmaAllocator& allocator,
     VkDeviceSize size,
     VkBufferUsageFlags usage,
     VkSharingMode sharingMode,
@@ -568,7 +567,7 @@ void Utilities::CreateBuffer(
     allocInfo.requiredFlags = properties;
 
     VmaAllocationInfo allocationInfo;
-    VkResult res = vmaCreateBuffer(vma_allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &allocationInfo);
+    VkResult res = vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &allocationInfo);
     if (res != VK_SUCCESS) {
         printf("Invalid buffer res: %u\n", res);
         assert(res == VK_SUCCESS);
@@ -629,6 +628,7 @@ void Utilities::CreateBuffer(
 void Utilities::CreateBuffer(
     VkPhysicalDevice& physicalDevice,
     VkDevice& device,
+    VmaAllocator& allocator,
     size_t stride,
     size_t num_elements,
     VkBufferUsageFlags usage,
@@ -646,6 +646,7 @@ void Utilities::CreateBuffer(
     Utilities::CreateBuffer(
         physicalDevice,
         device,
+        allocator,
         stride * num_elements,
         usage,
         sharingMode,
@@ -714,7 +715,7 @@ uint32_t Utilities::findMemoryType(VkPhysicalDevice& physicalDevice, uint32_t ty
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
-    for (uint32_t i = 0; memProperties.memoryTypeCount; i++) {
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if (typeFilter & (1 << i) &&
             (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
@@ -737,13 +738,13 @@ void Utilities::CopyBuffer(VkDevice& device, VkQueue& queue, VkCommandBuffer& co
     Utilities::endSingleTimeCommands(device, commandBuffer, queue, wait_fence);
 }
 
-void Utilities::FlushToBuffer(VkDevice& device, VmaAllocation& allocation, VkDeviceSize size, void*& data, void* src, bool unmap)
+void Utilities::FlushToBuffer(VkDevice& device, VmaAllocator& allocator, VmaAllocation& allocation, VkDeviceSize size, void*& data, void* src, bool unmap)
 {
-    vmaMapMemory(vma_allocator, allocation, &data);
+    vmaMapMemory(allocator, allocation, &data);
     memcpy(data, src, static_cast<size_t>(size));
     if (unmap)
     {
-        vmaUnmapMemory(vma_allocator, allocation);
+        vmaUnmapMemory(allocator, allocation);
     }
 }
 

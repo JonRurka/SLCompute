@@ -51,14 +51,14 @@
 #define PARAM_3_BUFFER param_3_in
 #endif
 #ifndef PARAM_3_BUFFER_BIND
-#define PARAM_3_BUFFER_BIND (PARAM_BIND_START + 3)
+#define PARAM_3_BUFFER_BIND (PARAM_BIND_START + 2)
 #endif
 
 #ifndef PARAM_4_BUFFER
 #define PARAM_4_BUFFER param_4_in
 #endif
 #ifndef PARAM_4_BUFFER_BIND
-#define PARAM_4_BUFFER_BIND (PARAM_BIND_START + 4)
+#define PARAM_4_BUFFER_BIND (PARAM_BIND_START + 3)
 #endif
 
 // pool buffer names and bindings
