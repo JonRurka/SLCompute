@@ -406,7 +406,7 @@ void ComputePool_private::map_complex_variables()
 
 void ComputePool_private::initialize_buffers()
 {
-	m_static_buffer = ProgramController::CreateBuffer(m_prog_inst, m_static_buffer_idx, sizeof(float));
+	m_static_buffer = ProgramController::CreateBuffer(m_prog_inst, std::max(m_static_buffer_idx, (size_t)1), sizeof(float));
 
 
 	/*control_in = Get_Controller()->NewReadBuffer(m_elements, sizeof(float) * 4);

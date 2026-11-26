@@ -26,7 +26,7 @@
 using namespace DynamicCompute::Compute::VK;
 
 #define WAIT_IDLE 1
-#define FORCE_VALIDATION_LAYERS true
+#define FORCE_VALIDATION_LAYERS false
 
 std::vector<VkExtensionProperties> ComputeEngine::mExtensions;
 VkInstance ComputeEngine::mInstance;
@@ -389,7 +389,9 @@ ComputeProgram* ComputeContext::Programs(std::string name) {
 }
 
 ComputeKernel* ComputeContext::GetKernel(std::string p_name, std::string name) {
-	return Programs(p_name)->GetKernel(name);
+	ComputeProgram* prog = Programs(p_name);
+	SL_ASSERT(prog != nullptr, "Program not found in GetKernel.");
+	return prog->GetKernel(name);
 }
 
 ComputeBuffer* ComputeContext::CreateBuffer(ComputeBuffer::Buffer_Type type, size_t size, bool external) {
@@ -410,10 +412,6 @@ VkResult ComputeContext::createLogicalDevice()
 	if (vkCreateFence(mDevice, &fence_info, nullptr, &mWaitFence) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create fence!");
 	}*/
-
-#ifdef WIN32
-	vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(mDevice, "vkGetMemoryWin32HandleKHR");
-#endif
 
 	//Utilities::Create_NVVK_Allocator(mPhysicalDevice, mDevice);
 	//load_GL(window::sysGetProcAddress);
@@ -609,8 +607,8 @@ int ComputeProgram::Set_Source(const char* source) {
 
 int ComputeProgram::Set_Binary(const void* binary, size_t length) {
 
-	char* char_binary = (char*) binary;
-	std::vector<char> shader_bin (char_binary, char_binary + length);
+	std::vector<uint32_t> shader_bin((length + 3) / 4);
+	std::memcpy(shader_bin.data(), binary, length);
 
 	mProgramModule = Utilities::createShaderModule(*mDevice, shader_bin);
 	if (mProgramModule == VK_NULL_HANDLE) {
@@ -657,6 +655,7 @@ void ComputeProgram::Dispose() {
 
 	for (auto [key, krn] : kernels) {
 		krn->Dispose();
+		delete krn;
 	}
 
 	kernels.clear();
@@ -834,7 +833,7 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	beginInfo.flags = 0; // must NOT be ONE_TIME_SUBMIT — same buffer is submitted num times
 
 	vkQueueWaitIdle(*mComputeQueue);
 	if (vkBeginCommandBuffer(*mComputeCmdBuffer, &beginInfo) != VK_SUCCESS) {
@@ -842,8 +841,13 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 	}
 	//printf("ComputeKernel::Execute: Start execute '%s'\n", mName);
 
+	// num-1 chain semaphores are needed: submit[i] signals chain[i], submit[i+1] waits on it.
+	// The last submit has no signal — the fence provides CPU sync, so no semaphore is left signaled.
+	const uint32_t chainCount = num > 0 ? num - 1 : 0;
+	SL_ASSERT((size_t)chainCount <= mAvailable_Semaphore.size(), "Not enough semaphores in pool for ExecuteBatch.");
 	std::vector<VkSemaphore> semaphores;
-	for (int i = 0; i < num; i++) {
+	semaphores.reserve(chainCount);
+	for (uint32_t i = 0; i < chainCount; i++) {
 		semaphores.push_back(mAvailable_Semaphore.front());
 		mAvailable_Semaphore.pop();
 	}
@@ -873,20 +877,22 @@ int ComputeKernel::ExecuteBatch(uint32_t num, uint32_t x, uint32_t y, uint32_t z
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
 
-	for (int i = 0; i < num; i++) {
+	for (uint32_t i = 0; i < num; i++) {
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = mComputeCmdBuffer;
 
-		if (i != 0) {
+		if (i > 0) {
 			submitInfo.pWaitSemaphores = &semaphores[i - 1];
 			submitInfo.waitSemaphoreCount = 1;
 			submitInfo.pWaitDstStageMask = waitStages;
 		}
 
-		submitInfo.pSignalSemaphores = &semaphores[i];
-		submitInfo.signalSemaphoreCount = 1;
+		if (i < chainCount) {
+			submitInfo.pSignalSemaphores = &semaphores[i];
+			submitInfo.signalSemaphoreCount = 1;
+		}
 
 		submits.push_back(submitInfo);
 	}

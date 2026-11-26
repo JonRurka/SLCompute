@@ -176,6 +176,10 @@ void Logger::Update(bool force)
             halt = true;
         }
 
+        if (entry.log_level < m_print_level) {
+            continue;
+        }
+
         //printf("%s::%s: %s\n", type_str.c_str(), entry.source.c_str(), entry.message.c_str());
         std::string output = to_display_string(entry.log_level, entry.source, entry.message);
         printf("%s", output.c_str());

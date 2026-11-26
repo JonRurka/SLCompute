@@ -51,7 +51,7 @@ nvvk::ExportResourceAllocatorDedicated* Utilities::Get_NVVK_Allocator()
     return &nvvk_allocator;
 }*/
 
-std::vector<char> Utilities::readFile(const std::string& filename)
+std::vector<uint32_t> Utilities::readFile(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -63,13 +63,14 @@ std::vector<char> Utilities::readFile(const std::string& filename)
     }
 
     size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
+    std::vector<char> rawBuffer(fileSize);
 
     file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
+    file.read(rawBuffer.data(), fileSize);
     file.close();
 
+    std::vector<uint32_t> buffer((fileSize + 3) / 4);
+    std::memcpy(buffer.data(), rawBuffer.data(), fileSize);
     return buffer;
 }
 
@@ -846,12 +847,12 @@ void Utilities::endSingleTimeCommands(VkDevice& device, VkCommandBuffer& cmdBuff
     //vkQueueWaitIdle(p_queue);
 }
 
-VkShaderModule Utilities::createShaderModule(VkDevice& device, const std::vector<char>& code)
+VkShaderModule Utilities::createShaderModule(VkDevice& device, const std::vector<uint32_t>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    createInfo.codeSize = code.size() * sizeof(uint32_t);
+    createInfo.pCode = code.data();
 
     VkShaderModule shaderModule = VK_NULL_HANDLE;
     VkResult res = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);

@@ -51,6 +51,7 @@ public:
     static void Set_Direct(bool value) { /*m_direct = value;*/ }
     static void Set_Crashing_Errors(bool value) { m_crash_on_error = value; }
     static void Set_Crashing_Warnings(bool value) { m_crash_on_warning = value; }
+    static void Set_Level(Level level) { m_print_level = level; }
 
     static void Update(bool force = false);
 
@@ -61,6 +62,7 @@ private:
     inline static bool m_crash_on_error{ false };
     inline static bool m_crash_on_warning{ false };
     std::vector<LogEntry> m_entries;
+    inline static Level m_print_level {Level::Info};
 
     static std::mutex m_lock;
 

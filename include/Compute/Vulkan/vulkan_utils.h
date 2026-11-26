@@ -80,7 +80,7 @@ namespace DynamicCompute {
 
                 // non-vulkan functions
 
-                std::vector<char> readFile(const std::string& filename);
+                std::vector<uint32_t> readFile(const std::string& filename);
 
 
 
@@ -252,7 +252,7 @@ namespace DynamicCompute {
 
                 // Shader utilities
 
-                VkShaderModule createShaderModule(VkDevice& device, const std::vector<char>& code);
+                VkShaderModule createShaderModule(VkDevice& device, const std::vector<uint32_t>& code);
 
             }
 

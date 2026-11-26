@@ -139,6 +139,8 @@ void ComputeController_VK::DisposePlatform() {
 
 void ComputeController_VK::Close()
 {
+	for (auto* ctrl : m_controllers)
+		delete ctrl;
 	m_controllers.clear();
 	DisposePlatform();
 }

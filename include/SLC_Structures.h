@@ -76,7 +76,7 @@ namespace SLCompute {
 		}
 
 	private:
-		uint32_t id;
+		uint32_t id = 0;
 		BufferInstance handle;
 		size_t stride;
 		pool_ref pool;
