@@ -8,6 +8,10 @@
 
 //#include "nvvk/resourceallocator_vk.hpp"
 
+#include "Logger.h"
+
+static const std::string LOG_LOC{ "VK_Utilities" };
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace DynamicCompute::Compute::VK;
@@ -26,7 +30,8 @@ void Utilities::Create_VMA_Allocator(VkInstance inst, VkPhysicalDevice physicalD
     allocatorCreateInfo.instance = inst;
     allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
-    vmaCreateAllocator(&allocatorCreateInfo, &out_allocator);
+    VkResult vma_res = vmaCreateAllocator(&allocatorCreateInfo, &out_allocator);
+    SL_ASSERT(vma_res == VK_SUCCESS, "vmaCreateAllocator failed.");
 }
 
 void Utilities::Destroy_VMA_Allocator(VmaAllocator allocator)
@@ -790,7 +795,8 @@ void Utilities::CreateCommandBuffer(VkCommandPool& cmdPool, VkDevice device, VkC
     allocInfo.commandPool = cmdPool;
     allocInfo.commandBufferCount = 1;
 
-    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+    VkResult alloc_res = vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+    SL_ASSERT(alloc_res == VK_SUCCESS, "vkAllocateCommandBuffers failed.");
 }
 
 VkCommandBuffer Utilities::CreateCommandBuffer(VkCommandPool& cmdPool, VkDevice device)
@@ -802,11 +808,16 @@ VkCommandBuffer Utilities::CreateCommandBuffer(VkCommandPool& cmdPool, VkDevice 
 
 void Utilities::beginSingleTimeCommands(VkCommandBuffer& cmdBuffer)
 {
+    // Reset to Initial state before recording — required because ONE_TIME_SUBMIT
+    // leaves the buffer in Invalid state after the submission completes.
+    vkResetCommandBuffer(cmdBuffer, 0);
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+    VkResult begin_res = vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+    SL_ASSERT(begin_res == VK_SUCCESS, "vkBeginCommandBuffer failed.");
 }
 
 VkCommandBuffer Utilities::beginSingleTimeCommands(VkCommandPool& cmdPool, VkDevice device)
@@ -820,14 +831,16 @@ VkCommandBuffer Utilities::beginSingleTimeCommands(VkCommandPool& cmdPool, VkDev
 
 void Utilities::endSingleTimeCommands(VkDevice& device, VkCommandBuffer& cmdBuffer, VkQueue& p_queue, VkFence& p_fence)
 {
-    vkEndCommandBuffer(cmdBuffer);
+    VkResult end_res = vkEndCommandBuffer(cmdBuffer);
+    SL_ASSERT(end_res == VK_SUCCESS, "vkEndCommandBuffer failed.");
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmdBuffer;
 
-    vkQueueSubmit(p_queue, 1, &submitInfo, p_fence);
+    VkResult submit_res = vkQueueSubmit(p_queue, 1, &submitInfo, p_fence);
+    SL_ASSERT(submit_res == VK_SUCCESS, "vkQueueSubmit failed.");
     vkWaitForFences(device, 1, &p_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &p_fence);
     //vkQueueWaitIdle(p_queue);
@@ -840,10 +853,11 @@ VkShaderModule Utilities::createShaderModule(VkDevice& device, const std::vector
     createInfo.codeSize = code.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-    VkShaderModule shaderModule;
+    VkShaderModule shaderModule = VK_NULL_HANDLE;
     VkResult res = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
     if (res != VK_SUCCESS) {
         printf("vkCreateShaderModule Failed: %i\n", res);
+        return VK_NULL_HANDLE;
     }
 
     return shaderModule;

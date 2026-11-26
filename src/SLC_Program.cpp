@@ -22,6 +22,29 @@ using namespace SLCompute;
 using namespace DynamicCompute::Compute;
 using namespace SLCompute::Resources;
 
+std::vector<SL_Device_Info> ProgramController::Get_Devices() {
+	std::vector<SL_Device_Info> res;
+	std::vector<Vulkan_Device_Info> devices = ComputeInterface::GetSupportedDevices_Vulkan();
+	res.reserve(devices.size());
+
+	for (auto& dvc : devices) {
+		Logger::LogDebug(LOG_LOC, "\tFound: %s (%s)", dvc.Name, dvc.GetTypeName().c_str());
+		SL_Device_Info d{};
+
+		d.id = dvc.Device_ID;
+		d.device_class = static_cast<SL_Device_Class>(dvc.Type);
+		strcpy(d.name, dvc.Name);
+
+		res.push_back(d);
+	}
+
+	std::sort(res.begin(), res.end(), [](const SL_Device_Info& a, const SL_Device_Info& b) {
+		return static_cast<uint32_t>(a.device_class) > static_cast<uint32_t>(b.device_class);
+	});
+
+	return res;
+}
+
 ProgramController::ProgramInstance ProgramController::Create(ProgramSettings settings) {
 	static std::mt19937_64 rng(std::random_device{}());
 
@@ -43,12 +66,13 @@ PoolInstance ProgramController::CreatePool(ProgramInstance p, PoolSettings setti
 PoolInstance ProgramController::create_pool(PoolSettings settings) {
 	unsigned int pool_id = pool_num++;
 	PoolInstance inst = std::make_shared<ComputePool_private>(m_prog_inst, pool_id, settings.type, settings.x_size, settings.y_size, settings.z_size);
-	m_pools[pool_num++] = inst;
+	m_pools[pool_id] = inst;
 	if (inst->Pool_Type() == PoolType::Dynamic) {
 		Logger::LogDebug(LOG_LOC, "Create a dynamic pool.");
 	}
 	else if (inst->Pool_Type() == PoolType::Static) {
 		Logger::LogDebug(LOG_LOC, "Create a static pool.");
+		SL_ASSERT(m_static_bind_idx < NUM_POOL_BIND_BUFFERS, "Exceeded maximum static pool count.");
 		inst->SetStaticPoolID(m_static_bind_idx++);
 		m_static_pools.push_back(inst);
 	}
@@ -64,6 +88,7 @@ void ProgramController::start() {
 	Logger::LogDebug(LOG_LOC, "Program %d: Starting program controller.", m_prog_inst);
 
 	initialize_buffers();
+	configure_workgroup_sizes();
 	Finalize();
 }
 
@@ -145,7 +170,7 @@ void ProgramController::Dispose() {
 	delete m_dummy_static_buffer;
 }
 
-ProgramController::ProgramController(ProgramInstance id, ProgramSettings) : m_prog_inst(id)
+ProgramController::ProgramController(ProgramInstance id, ProgramSettings settings) : m_prog_inst(id), m_settings(settings)
 {
 	Initialize();
 }
@@ -176,6 +201,19 @@ void ProgramController::AddBuffer(std::string program_name, int bind, IComputeBu
 	ind.GlobalIndex = bind;
 
 	m_programs[program_name]->KernelSetBuffer(kernel_name, buffer, ind);
+}
+
+void ProgramController::configure_workgroup_sizes()
+{
+	for (auto& [name, prog] : m_programs) {
+		prog->KernelSetWorkGroupSize(kernel_name, glm::uvec3(64, 1, 1));
+	}
+}
+
+void ProgramController::SetProgramWorkGroupSize(std::string program_name, glm::uvec3 size)
+{
+	SL_ASSERT(m_programs.count(program_name) > 0, "Program not found.");
+	m_programs[program_name]->KernelSetWorkGroupSize(kernel_name, size);
 }
 
 void ProgramController::Finalize()
@@ -288,14 +326,24 @@ void ProgramController::Initialize()
 
 	m_static_pools.reserve(NUM_POOL_BIND_BUFFERS);
 
-	std::vector<Vulkan_Device_Info> devices = ComputeInterface::GetSupportedDevices_Vulkan();
-	Logger::LogDebug(LOG_LOC, "Program %d: Get Compute Devices: %d", m_prog_inst, devices.size());
-	for (const auto& dvc : devices) {
+	std::vector<SL_Device_Info> sl_devices = Get_Devices(); // sorted highest-class first
+	SL_ASSERT(!sl_devices.empty(), "No compute devices found.");
+
+	uint32_t target_id = m_settings.Device_ID;
+	if (target_id == UINT32_MAX)
+		target_id = sl_devices[0].id;
+
+	std::vector<Vulkan_Device_Info> vk_devices = ComputeInterface::GetSupportedDevices_Vulkan();
+	Logger::LogDebug(LOG_LOC, "Program %d: Get Compute Devices: %d", m_prog_inst, vk_devices.size());
+	for (const auto& dvc : vk_devices)
 		Logger::LogDebug(LOG_LOC, "\tFound: %s", dvc.Name);
-	}
-	Vulkan_Device_Info device = devices[1];
-	Logger::LogDebug(LOG_LOC, "Program %d: Selected compute device: %s", m_prog_inst, device.Name);
-	m_controllerInfo.device = &device;
+
+	auto it = std::find_if(vk_devices.begin(), vk_devices.end(),
+		[&](const Vulkan_Device_Info& d){ return d.Device_ID == target_id; });
+	SL_ASSERT(it != vk_devices.end(), "Selected device not found.");
+	Vulkan_Device_Info selected_device = *it;
+	Logger::LogDebug(LOG_LOC, "Program %d: Selected compute device: %s", m_prog_inst, selected_device.Name);
+	m_controllerInfo.device = &selected_device;
 
 	m_controller = ComputeInterface::GetComputeController(ComputeInterface::VULKAN, m_controllerInfo);
 	Logger::LogDebug(LOG_LOC, "Program %d: Create Program Controller.", m_prog_inst);

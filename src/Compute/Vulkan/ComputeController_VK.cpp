@@ -24,6 +24,8 @@ void ComputeController_VK::Init(Platform platform, void* device, std::string pro
 
 	Vulkan_Device_Info info = *(Vulkan_Device_Info*)device;
 
+	// m_context is a non-owning observer. ComputeEngine::mContexts owns the
+	// ComputeContext* lifetime and deletes it in ComputeEngine::Dispose().
 	m_context = ComputeEngine::GetNewContext(info);
 }
 

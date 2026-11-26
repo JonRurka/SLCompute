@@ -9,9 +9,28 @@ namespace SLCompute {
 
 	class ComputePool_private;
 
+	// POOL_TYPE_DYNAMIC and POOL_TYPE_STATIC in shaders/libSLC/standard_buffers.inc
+	// must stay in sync with these values — Get_Control_Vec packs m_type directly
+	// into the control vec and the shader switch dispatches on the same integer.
 	enum class PoolType : uint32_t {
 		Dynamic = 1,
 		Static = 2,
+	};
+	static_assert(static_cast<uint32_t>(PoolType::Dynamic) == 1, "PoolType::Dynamic must match POOL_TYPE_DYNAMIC 1 in standard_buffers.inc");
+	static_assert(static_cast<uint32_t>(PoolType::Static)  == 2, "PoolType::Static must match POOL_TYPE_STATIC 2 in standard_buffers.inc");
+
+	enum class SL_Device_Class : uint32_t {
+		CPU = 0,
+		INTEGRATED_GPU = 1,
+		DISCRETE_GPU = 2,
+		VIRTUAL_GPU = 3,
+		ACCELERATOR = 4,
+		OTHER = 5,
+	};
+	struct SL_Device_Info {
+		uint32_t id;
+		SL_Device_Class device_class;
+		char name[256];
 	};
 
 	typedef uint32_t func_id;

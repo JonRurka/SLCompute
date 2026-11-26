@@ -55,10 +55,10 @@ longer in-flight and the fence is in the unsignaled state ready for the next
 `vkQueueSubmit`. Sequential calls are therefore always safe to re-record without
 any top-of-function guard.
 
-## The root cause this exposes (BUG-15)
+## The root cause this exposes (BUG-15) — now fixed
 
-The real underlying problem is that `mFinished_fence` / `mWaitFence` is a **single
+The real underlying problem was that `mFinished_fence` / `mWaitFence` was a **single
 shared fence** used by both compute dispatches and all buffer transfer operations.
-Any interleaving of a transfer and a dispatch, or concurrent buffer operations,
-can corrupt the wait state. This is tracked separately as BUG-15 and requires a
-more invasive fix (separate fences for compute vs. transfer).
+BUG-15 was fixed by uncommenting the kernel-owned `vkCreateFence` block so each
+`ComputeKernel` creates and destroys its own private `mFinished_fence`, leaving
+`mWaitFence` on `ComputeContext` solely for transfers.

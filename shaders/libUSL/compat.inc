@@ -22,7 +22,7 @@ float sqrMagnitude(fvec3 val)
 	//return dot(val, val);
 }
 
-#define VECTOR_ANGLE (out_val, from, to) 				\
+#define VECTOR_ANGLE(out_val, from, to) 				\
     float num = sqrt(SQR_MAG(from) * SQR_MAG(to)); 		\
     if (num < 0.0000000000000001) 						\
     { 													\
@@ -30,7 +30,7 @@ float sqrMagnitude(fvec3 val)
     } 													\
 	else { 												\
 		float num2 = clamp(dot(from, to) / num, -1, 1); \
-		out_val = acos(num2) * 57.29578f; 				\
+		out_val = acos(num2) * 57.29578; 				\
 	}
 
 float vector_angle(fvec3 from, fvec3 to){
@@ -40,7 +40,7 @@ float vector_angle(fvec3 from, fvec3 to){
         return 0;
     }
     float num2 = clamp(dot(from, to) / num, -1, 1);
-    return acos(num2) * 57.29578f;
+    return acos(num2) * 57.29578;
 }
 
 #define TRIANGLE_NORMAL(v1, v2, v3) normalize(cross(v2 - v1, v3 - v1))

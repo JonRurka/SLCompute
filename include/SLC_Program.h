@@ -28,7 +28,9 @@ namespace SLCompute {
 		};
 
 		struct ProgramSettings {
+			uint32_t Device_ID = UINT32_MAX; // UINT32_MAX = auto-select highest-class device
 
+			void Set_Device(const SL_Device_Info& d){ Device_ID = d.id; }
 		};
 
 		struct PoolSettings {
@@ -41,6 +43,8 @@ namespace SLCompute {
 		typedef size_t ProgramInstance;
 
 		ProgramController(ProgramInstance id, ProgramSettings);
+
+		static std::vector<SL_Device_Info> Get_Devices();
 
 		static void Enable(Programs p);
 		static ProgramInstance Create(ProgramSettings settings);
@@ -95,6 +99,7 @@ namespace SLCompute {
 		bool finalized = false;
 		bool initialized = false;
 		inline static unsigned int pool_num = 0;
+		ProgramSettings m_settings;
 		ProgramInstance m_prog_inst;
 		size_t m_static_bind_idx {0};
 
@@ -122,6 +127,10 @@ namespace SLCompute {
 		IComputeBuffer* control_in;
 
 		void initialize_buffers();
+
+		virtual void configure_workgroup_sizes();
+
+		void SetProgramWorkGroupSize(std::string program_name, glm::uvec3 size);
 
 		PoolInstance create_pool(PoolSettings settings);
 		void start();

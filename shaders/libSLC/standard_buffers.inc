@@ -222,8 +222,8 @@ slc_type Get_Float(uint p, uint idx){
 #define write_complex(buf, idx, val_expr) \
 do{                                     \
     STRUCT slc_complex v = val_expr;    \
-	write(buf, idx * COMPLEX_TYPE_STRIDE + 0, SLC_REAL(v)); \
-	write(buf, idx * COMPLEX_TYPE_STRIDE + 1, SLC_IMAG(v)); \
+	write(buf, (idx) * COMPLEX_TYPE_STRIDE + 0, SLC_REAL(v)); \
+	write(buf, (idx) * COMPLEX_TYPE_STRIDE + 1, SLC_IMAG(v)); \
 } while (false);
 #endif
 

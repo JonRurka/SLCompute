@@ -164,6 +164,8 @@ namespace DynamicCompute {
                 bool mCanCallDispose{ false };
                 bool mDestroyed{ false };
 
+                inline static const std::string LOG_LOC{ "VK_ComputeKernel" };
+
             public:
                 ComputeKernel() : mCanCallDispose(false) {}
                 ~ComputeKernel();
@@ -209,6 +211,8 @@ namespace DynamicCompute {
                 bool mInitialized{ false };
                 bool mCanCallDispose{ false };
                 bool mDestroyed{ false };
+
+                inline static const std::string LOG_LOC{ "VK_ComputeProgram" };
 
             public:
                 ComputeProgram() : mCanCallDispose(false) {}
@@ -259,7 +263,8 @@ namespace DynamicCompute {
                 const bool IncludeGraphics = false;
 
                 //nvvk::Context* mVkctx;
-                
+
+                // Owned: ComputeContext allocates and deletes these in Dispose().
                 std::map<std::string, ComputeProgram*> programs;
                 std::list<ComputeBuffer*> mBuffers;
 
@@ -282,6 +287,8 @@ namespace DynamicCompute {
 
                 bool mDestroyed{ false };
                 bool mCanCallDispose{ false };
+
+                inline static const std::string LOG_LOC{ "VK_ComputeContext" };
 
                 const std::vector<const char*> DeviceExtensions = {
                     VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
@@ -375,6 +382,8 @@ namespace DynamicCompute {
 
                 static std::string mApp_dir;
 
+                // Owned: ComputeEngine allocates via GetNewContext() and deletes in Dispose().
+                // ComputeController_VK::m_context is a non-owning observer into this list.
                 static std::list<ComputeContext*> mContexts;
 
                 inline static const std::vector<const char*> InstanceExtensions = {

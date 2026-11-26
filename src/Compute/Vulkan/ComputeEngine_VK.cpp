@@ -239,6 +239,7 @@ void ComputeEngine::Dispose()
 
 	for (auto contxt : mContexts) {
 		contxt->Dispose();
+		delete contxt;
 	}
 
 	mContexts.clear();
@@ -295,13 +296,8 @@ ComputeContext::ComputeContext(VkInstance* instance, Vulkan_Device_Info device) 
 		}
 	}
 
-	if (!deviceFound) {
-		printf("Physical device not found!\n");
-		return;
-	}
-	else {
-		printf("Found device '%s'\n", device.Name);
-	}
+	SL_ASSERT(deviceFound, "Physical device not found!");
+	printf("Found device '%s'\n", device.Name);
 
 	mIndices = Utilities::findQueueFamilies(mPhysicalDevice);
 
@@ -313,6 +309,7 @@ ComputeContext::ComputeContext(VkInstance* instance, Vulkan_Device_Info device) 
 	mIndices = indices;*/
 
 	VkResult res = createLogicalDevice();
+	SL_ASSERT(res == VK_SUCCESS, "createLogicalDevice failed.");
 
 	getQueueInstances();
 
@@ -460,14 +457,9 @@ VkResult ComputeContext::createLogicalDevice()
 
 	VkDeviceCreateInfo createInfo = Utilities::getDeviceCreateInfo(queueCreateInfos, deviceFeatures, (std::vector<const char*>&)DeviceExtensions);
 
-	const std::vector<const char*> layers = ComputeEngine::GetValidationLayers();
-	if (ComputeEngine::ValidationEnabled()) {
-		createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
-		createInfo.ppEnabledLayerNames = layers.data();
-	}
-	else {
-		createInfo.enabledLayerCount = 0;
-	}
+	// Device layers deprecated since Vulkan 1.0; validation is instance-only.
+	createInfo.enabledLayerCount = 0;
+	createInfo.ppEnabledLayerNames = nullptr;
 
 	VkResult res;
 	res = vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice);
@@ -573,10 +565,12 @@ void ComputeContext::Dispose() {
 
 	for (auto [key, prog] : programs) {
 		prog->Dispose();
+		delete prog;
 	}
 
 	for (auto buffer : mBuffers) {
 		buffer->Dispose();
+		delete buffer;
 	}
 
 	programs.clear();
@@ -619,6 +613,10 @@ int ComputeProgram::Set_Binary(const void* binary, size_t length) {
 	std::vector<char> shader_bin (char_binary, char_binary + length);
 
 	mProgramModule = Utilities::createShaderModule(*mDevice, shader_bin);
+	if (mProgramModule == VK_NULL_HANDLE) {
+		printf("ComputeProgram::Set_Binary: shader module creation failed.\n");
+		return -1;
+	}
 	mInitialized = true;
 
 	return 0;
@@ -629,12 +627,18 @@ int ComputeProgram::Set_Binary_File(std::string file_path) {
 	auto computeShaderBin = Utilities::readFile(file_path);
 
 	mProgramModule = Utilities::createShaderModule(*mDevice, computeShaderBin);
+	if (mProgramModule == VK_NULL_HANDLE) {
+		printf("ComputeProgram::Set_Binary_File: shader module creation failed.\n");
+		return -1;
+	}
 	mInitialized = true;
 
 	return 0;
 }
 
 ComputeKernel* ComputeProgram::GetKernel(std::string name) {
+	SL_ASSERT(mInitialized, "ComputeProgram::GetKernel called before shader module was successfully loaded.");
+
 	if (kernels.count(name) > 0)
 	{
 		return kernels[name];
@@ -743,12 +747,11 @@ VkResult ComputeKernel::BuildKernel()
 
 	mBoundBuffers.clear();
 
-	/*VkFenceCreateInfo fence_info{};
+	VkFenceCreateInfo fence_info{};
 	fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	if (vkCreateFence(*mDevice, &fence_info, nullptr, &mFinished_fence) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create fence!");
-	}*/
-	mFinished_fence = *mProgram->GetContext()->GetWaitFence();
+	}
 
 	VkSemaphoreCreateInfo semaphore_info{};
 	semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1002,7 +1005,8 @@ void ComputeKernel::Dispose() {
 	
 	//printf("Dispose ComputePipelineLayout for kernel '%s'.\n", mName.c_str());
 	vkDestroyPipelineLayout(*mDevice, mComputePipelineLayout, nullptr);
-	 
+
+	vkDestroyFence(*mDevice, mFinished_fence, nullptr);
 
 	mDestroyed = true;
 	mInitialized = false;
@@ -1130,7 +1134,7 @@ ComputeBuffer::ComputeBuffer(ComputeContext* context, Buffer_Type type, VkDevice
 		mSharingMode,
 		false,
 		(VkBufferCreateFlags)0,
-		VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+		VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
 		VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		mAllQueueFamilies,
@@ -1244,6 +1248,10 @@ int ComputeBuffer::GetData(void* outData, int SrcStart, int size)
 	vkCmdCopyBuffer(*mTransferCmdBuffer, mBuffer, stagingBuffer, 1, &copyRegion);
 
 	Utilities::endSingleTimeCommands(*mLogicalDevice, *mTransferCmdBuffer, *mTransferQueue, *mContext->GetWaitFence());
+
+	// Make transfer writes visible to the host before mapping.
+	// No-op on HOST_COHERENT memory; flushes CPU cache on non-coherent allocations.
+	vmaInvalidateAllocation(*mContext->GetVmaAllocator(), stagingBufferAllocation, 0, static_cast<VkDeviceSize>(size));
 
 	void* maped_data;
 	VkResult map_res = vmaMapMemory(*mContext->GetVmaAllocator(), stagingBufferAllocation, &maped_data);

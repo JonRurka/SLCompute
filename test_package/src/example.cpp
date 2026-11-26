@@ -14,8 +14,10 @@ using namespace SLCompute;
 int main() {
     slcompute();
 
+    auto devices = ProgramController::Get_Devices();
 
     ProgramController::ProgramSettings settings{};
+    settings.Set_Device(devices[0]);
 
     printf("Test_Package: Enable Complex Program.\n");
     ProgramController::Enable(ProgramController::Programs::COMPLEX);
