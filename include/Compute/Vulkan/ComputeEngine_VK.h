@@ -435,6 +435,8 @@ namespace DynamicCompute {
                     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                     void* pUserData);
 
+                inline static const std::string LOG_LOC{ "VK_ComputeEngine" };
+
             };
 
 

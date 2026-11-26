@@ -64,6 +64,8 @@ namespace DynamicCompute {
 				bool mDestroyed{ false };
 
 				static std::vector<ComputeController_VK*> m_controllers;
+
+				inline static const std::string LOG_LOC{ "ComputeController_VK" };
 			};
 
 

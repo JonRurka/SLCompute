@@ -3,6 +3,7 @@
 #include "ComputeEngine_VK.h"
 #include "ComputeProgram_VK.h"
 #include "ComputeBuffer_VK.h"
+#include "Logger.h"
 
 using namespace DynamicCompute::Compute;
 using namespace DynamicCompute::Compute::VK;
@@ -16,13 +17,10 @@ void ComputeController_VK::Init(Platform platform, void* device, std::string pro
 
 	if (!ComputeEngine::IsInitialized()) {
 		int res = ComputeEngine::Init(m_directory);
-
-		if (res != 0) {
-			printf("Failed to initialize Vulkan\n");
-		}
+		SL_ASSERT(res == 0, "Failed to initialize Vulkan");
 	}
 
-	Vulkan_Device_Info info = *(Vulkan_Device_Info*)device;
+	Vulkan_Device_Info info = *static_cast<Vulkan_Device_Info *>(device);
 
 	// m_context is a non-owning observer. ComputeEngine::mContexts owns the
 	// ComputeContext* lifetime and deletes it in ComputeEngine::Dispose().

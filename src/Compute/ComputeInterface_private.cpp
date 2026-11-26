@@ -63,7 +63,8 @@ namespace DynamicCompute::Compute {
 
             default:
                 // This should never happen.
-                printf("Not controller platform defined\n");
+                assert(false);
+                //printf("Not controller platform defined\n");
                 return nullptr;
         }
     }
@@ -115,13 +116,7 @@ namespace DynamicCompute::Compute {
         IComputeController_private* controller = ComputeController_VK::New();
 
         controller->Init(info.platform, info.device, info.program_dir);
-
-        if (controller == nullptr) {
-            printf("the controller is null\n");
-        }
-        else {
-            //printf("the controller is not null\n");
-        }
+        SL_ASSERT(controller != nullptr, "Controller null");
 
         return controller;
 #else

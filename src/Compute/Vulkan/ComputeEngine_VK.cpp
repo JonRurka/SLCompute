@@ -50,15 +50,15 @@ int ComputeEngine::Init(std::string dir)
 {
 	if (FORCE_VALIDATION_LAYERS) {
 		mEnableValidationLayers = true;
-		printf("VK: Force Enable validation layers.\n");
+		Logger::LogDebug(LOG_LOC,"VK: Force Enable validation layers.\n");
 	}
 	else {
 #ifdef NDEBUG
 		mEnableValidationLayers = false;
-		printf("VK: Disable validation layers for release build.\n");
+		Logger::LogDebug(LOG_LOC, "VK: Disable validation layers for release build.\n");
 #else
 		mEnableValidationLayers = true;
-		printf("VK: Enable validation layers for debug build.\n");
+		Logger::LogDebug(LOG_LOC, "VK: Enable validation layers for debug build.\n");
 #endif
 	}
 
@@ -159,7 +159,7 @@ VkResult ComputeEngine::createInstance()
 
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 	if (mEnableValidationLayers) {
-		printf("VK: Enable validation layers\n");
+		Logger::LogInfo(LOG_LOC, "VK: Enable validation layers\n");
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 
@@ -167,7 +167,7 @@ VkResult ComputeEngine::createInstance()
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 	}
 	else {
-		printf("VK: Disable validation layers\n");
+		Logger::LogDebug(LOG_LOC, "VK: Disable validation layers\n");
 		createInfo.enabledLayerCount = 0;
 		createInfo.pNext = nullptr;
 	}
@@ -297,7 +297,7 @@ ComputeContext::ComputeContext(VkInstance* instance, Vulkan_Device_Info device) 
 	}
 
 	SL_ASSERT(deviceFound, "Physical device not found!");
-	printf("Found device '%s'\n", device.Name);
+	Logger::LogDebug( LOG_LOC, "Found device '%s'\n", device.Name);
 
 	mIndices = Utilities::findQueueFamilies(mPhysicalDevice);
 

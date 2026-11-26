@@ -316,7 +316,7 @@ void ProgramController::Initialize()
 {
 	SL_ASSERT(!initialized, "Program not initialized.");
 
-	Logger::LogInfo(LOG_LOC, "Program %d: Initialize", m_prog_inst);
+	Logger::LogDebug(LOG_LOC, "Program %d: Initialize", m_prog_inst);
 
 	SL_Float_Type::Enable();
 	Logger::LogDebug(LOG_LOC, "Program %d: Float datatype enabled.", m_prog_inst);

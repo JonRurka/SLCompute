@@ -227,9 +227,9 @@ void ComputePool_private::Test_Buffer_Engine(size_t offset, size_t elem) {
 	float* test_float_buf_res = new float[elem];
 	test_buf_dst->GetData(test_float_buf_res);
 
-	Logger::LogDebug(LOG_LOC, "Printing results:");
+	Logger::LogDebug(LOG_LOC, "Got results:");
 	for (int i = 0; i < elem; i++) {
-		printf("Val %d: %f\n", i, test_float_buf_res[i]);
+		//printf("Val %d: %f\n", i, test_float_buf_res[i]);
 	}
 
 	test_buf_src->Dispose();
